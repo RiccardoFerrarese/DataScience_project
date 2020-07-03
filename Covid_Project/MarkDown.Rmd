@@ -1184,5 +1184,5 @@ knitr::include_graphics("./Image/aeroporti_nord.jpg")
 
 Citando *Albert Einstein* - *"Il progresso tecnologico è come un'ascia nelle mani di un criminale patologico."* 
 
-Di certo porta dei miglioramenti, ma non bisogna trascurare le ripercussioni, che siano piccole o grandi, che hanno impatto sulla nostra vita. 
+Di certo porta dei miglioramenti, ma non bisogna trascurare le ripercussioni, piccole o grandi che siano, che hanno impatto sulla nostra vita. 
 Questa situazione di certo ha messo in luce diversi aspetti del mondo in cui viviamo oggigiorno.  
