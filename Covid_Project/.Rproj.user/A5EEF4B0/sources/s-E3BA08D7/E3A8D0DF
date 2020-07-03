@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1589880799025.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E3A8D0DF",
+    "lastKnownWriteTime" : 1593799746,
+    "last_content_update" : 1593799746232,
+    "path" : "~/Desktop/Laboratori_Uni/Covid_Project/MarkDown.Rmd",
+    "project_path" : "MarkDown.Rmd",
+    "properties" : {
+        "cursorPosition" : "17,82",
+        "last_setup_crc32" : "E3BA08D717e3314",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,300 @@
+---
+title: "Query in SQL and Base R"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+Query (transformation) in base R is realized with the following functions:
+
+* [subset](https://stat.ethz.ch/R-manual/R-devel/library/base/html/subset.html) to filter rows and select columns;
+* [order](https://stat.ethz.ch/R-manual/R-devel/library/base/html/order.html) to arrange rows; 
+* [transform](https://stat.ethz.ch/R-manual/R-devel/library/base/html/transform.html) to add variables; 
+* [aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html) to group rows; 
+* [merge](https://stat.ethz.ch/R-manual/R-devel/library/base/html/merge.html) to join data frames.
+
+We will introduce them writing queries with respect to the dataset [nycflights13](https://CRAN.R-project.org/package=nycflights13). We will write the queries both in **SQL** and **base R**. Before querying in base R, let's add a surrogate key called id to the data frame flights:
+
+```{r}
+library(dplyr)
+library(nycflights13)
+
+# add id to flights
+flights = mutate(flights, id = 1:nrow(flights)) %>% select(id, everything())
+```
+
+***
+
+>flights on Christmas
+
+<pre>
+-- SQL
+select *
+from flights 
+where month = 12 and day = 25
+</pre>
+
+```{r}
+# base R
+subset(flights, month == 12 & day == 25 )
+```
+
+***
+
+>flights that have a delay (either on departure or on arrival)
+
+<pre>
+-- SQL
+select *
+from flights 
+where dep_delay is not null or arr_delay is not null
+</pre>
+
+```{r}
+# base R
+subset(flights, !is.na(dep_delay) | !is.na(arr_delay))
+
+```
+
+***
+>flights that were not cancelled (that is, those with valid departure and arrival times)
+
+<pre>
+-- SQL
+select *
+from flights 
+where dep_time is not null and arr_time is not null
+</pre>
+
+```{r}
+# base R
+subset(flights, !is.na(dep_time) & !is.na(arr_time))
+```
+
+***
+>flights that have a departure delay sorted by delay
+
+<pre>
+-- SQL
+select *
+from flights 
+where dep_delay > 0
+order by dep_delay desc
+
+</pre>
+
+```{r}
+# base R
+df = subset(flights, dep_delay > 0)
+df[order(desc(df$dep_delay)), ]
+```
+
+***
+>flights that catched up during the flight sorted by catch up time
+
+<pre>
+-- SQL
+select id, dep_delay, arr_delay, (dep_delay - arr_delay) as catchup
+from flights
+where catchup > 0
+order by catchup desc
+
+</pre>
+
+```{r}
+# base R
+df = transform(flights, catchup = dep_delay - arr_delay)
+df = subset(df, subset = (catchup > 0), select = c(id, dep_delay, arr_delay, catchup))
+df[order(desc(df$catchup)), ]
+```
+
+***
+>The number of flights per day
+
+<pre>
+-- SQL
+select month, day, count(*) as count
+from flights
+group by month, day
+</pre>
+
+```{r}
+# base R
+df = aggregate(id ~ day + month, flights, FUN = length)
+colnames(df)[3] = c("count")
+df
+```
+
+***
+> The busy days (with more than 1000 flights)
+
+<pre>
+-- SQL
+select month, day, count(*) as count
+from flights
+group by month, day
+having count > 1000;
+</pre>
+
+```{r}
+# base R
+df = aggregate(id ~ day + month, flights, FUN = length)
+colnames(df)[3] = "count"
+subset(df, count > 1000)
+```
+
+***
+> The number of flights per destination
+
+<pre>
+-- SQL
+select dest, count(*) as count
+from flights
+group by dest;
+</pre>
+
+```{r}
+# base R
+df = aggregate(id ~ dest, flights, FUN = length)
+colnames(df)[2] = "count"
+df
+
+```
+
+***
+> The popular destinations (with more than 365 flights) sorted by number of flights in descending order
+
+<pre>
+-- SQL
+select dest, count(*) as count
+from flights
+group by dest
+having count > 365
+order by count desc;
+</pre>
+
+```{r}
+# base R
+df = aggregate(id ~ dest, flights, FUN = length)
+colnames(df)[2] = "count"
+df = subset(df, count > 365)
+df[order(desc(df$count)), ]
+```
+
+***
+> the mean departure delay per day sorted in decreasing order of all flights on busy days of summer 
+
+<pre>
+-- SQL
+select month, day, count(*) as count, avg(dep_delay) as avg_delay
+from flights
+where month = 6 or month = 7 or month = 8
+group by month, day
+having count > 1000
+order by avg_delay desc;
+</pre>
+
+```{r}
+# base R (stack overflow)
+df = aggregate(dep_delay ~ day + month, flights, 
+               FUN = function(x) cbind(count = length(x), avg_delay = mean(x, na.rm = TRUE)), 
+               na.action = NULL)
+
+# df$dep_delay is a matrix
+str(df)
+
+# unnest
+df = cbind(df[,1:2], df[,3])
+colnames(df)[3:4] = c("count", "avg_delay")
+
+# filter
+df = subset(df, count > 1000)
+
+# order
+df[order(desc(df$avg_delay)), ]
+
+```
+
+***
+> Flights that flew with a plane manufactured by BOEING
+
+<pre>
+-- SQL
+select flights.id, flights.tailnum, planes.manufacturer
+from flights, planes
+where flights.tailnum = planes.tailnum and planes.manufacturer = "BOEING"
+
+</pre>
+
+```{r}
+# base R
+# all.x = TRUE --> left join
+# all.y = TRUE --> right join
+# all = TRUE   --> full join
+# all = FALSE  --> inner join
+df = merge(flights, planes, by="tailnum", all.x = TRUE)
+subset(df, subset = (manufacturer == "BOEING"), select = c("id", "tailnum", "manufacturer"))
+```
+
+***
+> Flights that flew to a destination with an altitude greater than 6000 feet sorted by altitude
+
+<pre>
+-- SQL
+select flights.id, flights.dest, airports.name, airports.alt
+from flights, airports
+where flights.dest = airports.faa and airports.alt > 6000
+order by airports.alt;
+</pre>
+
+```{r}
+# base R
+df = merge(flights, airports, by.x = "dest", by.y = "faa", all.x = TRUE)
+df = subset(df, subset = (alt > 6000), select = c("id", "dest", "name", "alt"))
+df[order(df$alt), ]
+```
+
+***
+> Flights that took off with a plane with 4 engines and a visibility lower than 3 miles
+
+<pre>
+-- SQL
+select flights.id, planes.engines, weather.visib
+from flights, weather, planes
+where flights.month = weather.month and flights.day = weather.day and flights.hour = weather.hour and 
+      flights.origin = weather.origin and weather.visib < 3 and flights.tailnum = planes.tailnum and planes.engines = 4
+</pre>
+
+```{r}
+# base R
+df = merge(flights, weather, all.x = TRUE)
+df = merge(df, planes, by = "tailnum", all.x = TRUE)
+subset(df, subset = (visib < 3 & engines == 4), select = c("id", "engines", "visib"))
+```
+
+
+***
+> Flights with destination and origin airports with an altitude difference of more than 6000 feet
+
+<pre>
+-- SQL
+select flights.id, airports2.alt, airports1.alt, (airports2.alt - airports1.alt) as altdelta
+from flights, airports as airports1, airports as airports2
+where flights.origin = airports1.faa and flights.dest = airports2.faa and altdelta > 6000
+
+</pre>
+
+```{r}
+# base R
+df = merge(flights, airports, by.x = "origin", by.y = "faa", all.x = TRUE)
+df = merge(df, airports, by.x = "dest", by.y = "faa", all.x = TRUE)
+df = subset(df, select = c("id", "alt.x", "alt.y"))
+df = transform(df, altdelta = alt.y - alt.x)
+subset(df, altdelta > 6000)
+```
+
+

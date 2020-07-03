@@ -1,0 +1,3 @@
+"0","## load data "
+"0","global_rec_init <- read.csv(""GitRepoData/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"" )"
+"0","head( global_rec_init, 2 )"

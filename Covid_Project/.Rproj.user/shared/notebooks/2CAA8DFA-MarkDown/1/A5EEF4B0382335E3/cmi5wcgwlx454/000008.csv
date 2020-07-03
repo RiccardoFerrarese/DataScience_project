@@ -1,0 +1,7 @@
+"0",""
+"0","## si toglie country US e quelli con casi minori di tot "
+"0","global_maj_noUS <- filter(global_majTot, country != 'US' ) "
+"0","ggplot( global_maj_noUS, aes( x = date, y = cases ) ) + "
+"0","  geom_line( aes( group = country) , alpha = 0.3 ) + "
+"0","  geom_smooth( se = FALSE) +"
+"0","  theme_minimal()  "

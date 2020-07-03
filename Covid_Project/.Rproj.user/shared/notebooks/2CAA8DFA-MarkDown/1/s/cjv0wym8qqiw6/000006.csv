@@ -1,0 +1,7 @@
+"0",""
+"0","t_continent <- subset(t_continent, Continent_Name!=""North America"" &  Continent_Name!=""South America"")"
+"0","t_continent <- inner_join( t_continent, info_continents )"
+"0",""
+"0","names(t_continent)[names(t_continent)==""Continent_Name""] <- ""group"""
+"0",""
+"0","compute_and_visualize_prevalence( t_continent )"

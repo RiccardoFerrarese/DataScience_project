@@ -1,0 +1,8 @@
+"0","knitr::opts_chunk$set(cache = TRUE, warning = FALSE, message = FALSE, echo = FALSE, fig.align='center' )"
+"0","getwd()"
+"1","[1]"
+"1"," ""/Users/riccardo/Desktop/Laboratori_Uni/Covid_Project"""
+"1","
+"
+"0","## TODO FOR RUN IN YOUR PC "
+"0","##setwd()"

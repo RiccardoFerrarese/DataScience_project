@@ -1,0 +1,8 @@
+"0",""
+"0","## si toglie country US e quelli con casi minori di tot "
+"0","global_maj_noUS <- filter(global_majTot, country != 'US' )"
+"0","# vedo se ha avuto successo "
+"0","global_maj_noUS %>%"
+"0","  select( country, cases ) %>%"
+"0","  arrange( -cases ) %>%"
+"0","  head( 10 )"

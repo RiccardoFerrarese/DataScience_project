@@ -1,0 +1,3 @@
+"0","foo_foo <- hop(foo_foo, through = forest)"
+"2","Error in hop(foo_foo, through = forest) : non trovo la funzione ""hop""
+"

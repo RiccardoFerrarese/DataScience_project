@@ -1,0 +1,10 @@
+"0","bop("
+"0","  scoop("
+"0","    hop(foo_foo, through = forest),"
+"0","    up = field_mice"
+"0","  ), "
+"0","  on = head"
+"0",")"
+"2","Error in bop(scoop(hop(foo_foo, through = forest), up = field_mice), on = head) : 
+  non trovo la funzione ""bop""
+"

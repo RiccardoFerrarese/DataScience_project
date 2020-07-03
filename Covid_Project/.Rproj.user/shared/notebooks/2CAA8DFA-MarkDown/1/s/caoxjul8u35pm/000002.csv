@@ -1,0 +1,6 @@
+"0",""
+"0","ggplot( group_continent, aes( x = date, y = cases, group = Continent_Name, color = Continent_Name)) + "
+"0","  geom_line( alpha = 2 ) +"
+"0","  facet_wrap(~Continent_Name)+"
+"0","  theme_minimal() "
+"0",""

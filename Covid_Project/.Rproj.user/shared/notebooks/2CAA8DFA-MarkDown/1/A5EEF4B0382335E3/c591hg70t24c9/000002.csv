@@ -1,0 +1,8 @@
+"0",""
+"0","global_data_forDate = global_data_init %>% "
+"0","  gather(X1.22.20:X5.18.20, key =""date"", value = ""cases"") %>% "
+"0","  select( -Province.State, -Lat, -Long ) "
+"0",""
+"0","global_data_forDate$date = substring( global_data_forDate$date, 2)"
+"0","names(global_data_forDate)[names(global_data_forDate)==""Country.Region""] <- ""country"""
+"0",""

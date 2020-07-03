@@ -1,0 +1,9 @@
+{
+    "path" : "~/Desktop/Laboratori_Uni/Covid_Project/Image/Map_regioni",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

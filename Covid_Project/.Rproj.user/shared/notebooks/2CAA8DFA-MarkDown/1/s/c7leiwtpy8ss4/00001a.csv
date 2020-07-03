@@ -1,0 +1,8 @@
+"0",""
+"0",""
+"0","## ricordiamoci che ho tolto l'america "
+"0","ggplot( global_maj_noUS, aes( x = date, y = cases ) ) + "
+"0","  geom_line( aes( group = country, color = country) , alpha = 1.2 ) + "
+"0","  facet_wrap( ~country ) +"
+"0","  theme_minimal() + "
+"0","  theme(legend.position=""none"")"

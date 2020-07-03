@@ -1,0 +1,8 @@
+"0","## delete data from env. "
+"0","remove( global_df_correct )"
+"0","remove( info_continents )"
+"0","remove( group_continent )"
+"0","remove( continent )"
+"0","remove( continent_df )"
+"0","remove( continent_list_df )"
+"0","remove( t_continent )"

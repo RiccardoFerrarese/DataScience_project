@@ -1,0 +1,4 @@
+"0",""
+"0",""
+"0","global_death_init <- read.csv(""/Users/riccardo/Desktop/Laboratori_Uni/Covid_Project/GitRepoData/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"")"
+"0","head( global_death_init, 2 )"

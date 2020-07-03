@@ -1,0 +1,285 @@
+---
+title: "Italian Soccer League 18/19"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, message = FALSE, warning = FALSE)
+```
+
+
+### Prolog
+
+Read matches of Italian soccer league 18/19 from [www.football-data.co.uk](http://www.football-data.co.uk/mmz4281/1819/I1.csv). Then, using pipe `%>%`and only one sequence of commands, do the following:
+
+1. filter valid matches (those with a value for variables `FTHG` and `FTAG`)
+1. select variables of interest, that is those from Date to AR
+1. create Date objects from Date variable with `dmy` function
+1. add columns `HomeTeamId` and `AwayTeamId` with numeric identifiers for the teams (Hint: build a vector of teams and then use the `match` function)
+1. arrange the data frame by Date
+
+Finally, write a function that computes team ratings (wins, draws, loses, points, goals for, goals against) from the team matches and use to create a rating data frame sorted by points.
+
+```{r library}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(modelr)
+```
+
+
+```{r}
+# read data from CSV online 
+matches = read_csv("http://www.football-data.co.uk/mmz4281/1819/I1.csv")
+
+
+# get teams
+teams = sort(unique(matches$HomeTeam)) 
+
+# transform matches
+matches = matches %>% 
+  filter(!is.na(FTHG), !is.na(FTAG)) %>% 
+  select(Date:AR) %>%
+  mutate(Date = dmy(Date)) %>% 
+  mutate(HomeTeamId = match(HomeTeam, teams), AwayTeamId = match(AwayTeam, teams)) %>% 
+  arrange(Date)
+  
+```
+
+```{r}
+# compute team ratings
+# Input: 
+# df -- data frame with match statistics
+# teams -- vector with team names
+# output:
+# a tibble with ratings for each team
+compute_football_ratings = function(df, teams) {
+  
+  # number of matches
+  m = nrow(df)
+  
+  # number of teams
+  n = length(teams)
+  
+  # rating vectors
+  # wins
+  V = vector("integer", n)
+  # draws
+  P = vector("integer", n)
+  # loses
+  S = vector("integer", n)
+  # goals for
+  GF = vector("integer", n)
+  # goals against
+  GS = vector("integer", n)
+  # points
+  PT = vector("integer", n)
+  
+  for (i in 1:m) {
+    # home team wins
+    if (df[[i, "FTHG"]] > df[[i, "FTAG"]]) {
+      V[df[[i, "HomeTeamId"]]] = V[df[[i, "HomeTeamId"]]] + 1L
+      S[df[[i, "AwayTeamId"]]] = S[df[[i, "AwayTeamId"]]] + 1L
+    }
+    # away team wins
+    if (df[[i, "FTHG"]] < df[[i, "FTAG"]]) {
+      S[df[[i, "HomeTeamId"]]] = S[df[[i, "HomeTeamId"]]] + 1L
+      V[df[[i, "AwayTeamId"]]] = V[df[[i, "AwayTeamId"]]] + 1L
+    }
+    # draw
+    if (df[[i, "FTHG"]] == df[[i, "FTAG"]]) {
+      P[df[[i, "HomeTeamId"]]] = P[df[[i, "HomeTeamId"]]] + 1L
+      P[df[[i, "AwayTeamId"]]] = P[df[[i, "AwayTeamId"]]] + 1L
+    }
+    # goals for
+    GF[df[[i, "HomeTeamId"]]] = GF[df[[i, "HomeTeamId"]]] + df[[i, "FTHG"]]
+    GF[df[[i, "AwayTeamId"]]] = GF[df[[i, "AwayTeamId"]]] + df[[i, "FTAG"]]
+    
+    # goals against
+    GS[df[[i, "HomeTeamId"]]] = GS[df[[i, "HomeTeamId"]]] + df[[i, "FTAG"]]
+    GS[df[[i, "AwayTeamId"]]] = GS[df[[i, "AwayTeamId"]]] + df[[i, "FTHG"]]
+  
+    # points
+    PT[df[[i, "HomeTeamId"]]] = 3L * V[df[[i, "HomeTeamId"]]] + P[df[[i, "HomeTeamId"]]]
+    PT[df[[i, "AwayTeamId"]]] = 3L * V[df[[i, "AwayTeamId"]]] + P[df[[i, "AwayTeamId"]]]
+  }
+  
+  return(tibble(Team = teams, PT, V = V, P = P, S = S, GF = GF, GS = GS))
+}
+
+```
+
+```{r}
+rating = compute_football_ratings(matches, teams) %>% 
+  arrange(desc(PT))
+
+rating
+
+```
+
+
+### Linear regression modeling
+
+1. Write simple linear regression models over the rating data frame explaining variable points in terms of variables: 
+    a. goals for, 
+    a. goals against, 
+    a. goals spread (goals for minus goals against). 
+    
+```{r}
+modelPTGF = lm( PT~GF, data = rating) ## linear model punti ~ gol fatti 
+ggplot( rating, aes( x = GF, y = PT ))+
+  geom_point()+
+  geom_abline( intercept = modelPTGF$coefficients[1],
+               slope = modelPTGF$coefficients[2], 
+               colour = "red")
+
+# model quality 
+corPTGF = cor( rating$GF, rating$PT )
+quality = list()
+quality$PFGF = corPTGF^2   ## errore quadratico 
+quality
+
+
+####################################
+
+modelPTGS = lm( PT ~ GS, data = rating ) ## linear model per punti ~ gol subiti 
+ggplot( rating, aes(x = GS, y = PT) ) + 
+  geom_point()+ 
+  geom_abline( intercept = modelPTGS$coefficients[1],
+               slope = modelPTGS$coefficients[2], 
+               colour = "red" )
+
+# compute model quality 
+corPTGS = cor(rating$GS, rating$PT) ## coefficiente di correlazione
+quality = list() ## definisco quality come una lista 
+
+quality$PFGS = corPTGS^2
+quality
+
+###################################
+
+## differenza gol 
+rating = mutate( rating, DG = GF - GS )
+modelPTDG = lm( PT ~ DG, data = rating )
+ggplot( rating, aes(x = DG, y = PT) ) + 
+  geom_point()+ 
+  geom_abline( intercept = modelPTDG$coefficients[1], ## sapendo i coefficenti del modello aggiungo direttamente la linea al grafico 
+               slope = modelPTDG$coefficients[2],  ## così facendo non devo aggiungere la predizione alla tabella 
+               colour = "red" )
+
+## compute model quality
+corPTDG = cor(rating$DG, rating$PT) ## coefficiente di correlazione
+quality = list() ## definisco quality come una lista 
+
+quality$PFGD = corPTDG^2
+quality
+
+####################################
+modPTGFGS = lm(PT ~ GF + GS, data = rating)
+
+summary(modPTGFGS)$coefficients
+coe = abs(summary(modPTGFGS)$coefficients[2:3]) #--> in termini di un piano con più coeff 
+names(coe) = c("attack", "defense")
+round(coe / sum(coe), 2)
+
+quality$PTGFGS = summary(modPTGFGS)$r.squared
+quality
+
+
+```
+    
+    Find out which is the best model.
+1. Model points in terms of both goals for and goals against using multiple linear regression. Which among goals for and goals against contribute more to points? Use the answer to suggest a market strategy for a team.
+
+
+
+
+```{r echo=FALSE, eval=FALSE}
+modPTGF = lm(PT ~ GF, data = rating)
+
+# plot observed and predicted values
+rating = add_predictions(rating, modPTGF) 
+ggplot(rating, aes(x = GF)) +
+  geom_point(aes(y = PT)) + # observed values
+  geom_line(aes(y = pred), colour = "red") # predicted values
+
+# add and plot residuals
+rating = add_residuals(rating, modPTGF)
+ggplot(rating, aes(GF, resid)) + 
+  geom_ref_line(h = 0) +
+  geom_point()
+
+# sort by residuals     --> previsione di quanto il modello ha previsto bene
+rating %>%
+  arrange(desc(resid)) %>% 
+  head(3)
+
+rating %>%
+  arrange(resid) %>% 
+  head(3)
+
+# remove residulas
+rating = select(rating, -resid, -pred)
+
+# compute model quality
+corPTGF = cor(rating$PT, rating$GF)
+quality = list()
+quality$PFGF = corPTGF^2
+quality
+
+```
+
+```{r echo=FALSE, eval=FALSE}
+modPTGS = lm(PT ~ GS, data = rating)
+
+# plot observed and predicted values
+ggplot(rating, aes(x = GS, y = PT)) + 
+  geom_point() + 
+  geom_abline(intercept = modPTGS$coefficients[1], 
+              slope = modPTGS$coefficients[2], 
+              color = "red")
+
+corPTGS = cor(rating$PT, rating$GS)
+quality$PFGS = corPTGS^2
+quality
+
+```
+
+```{r echo=FALSE, eval=FALSE}
+
+# add goal spread
+rating = mutate(rating, DG = GF - GS)
+modPTDG = lm(PT ~ DG, data = rating)
+
+# plot observed and predicted values
+ggplot(rating, aes(x = DG, y = PT)) + 
+  geom_point() + 
+  geom_abline(intercept = modPTDG$coefficients[1], 
+              slope = modPTDG$coefficients[2], 
+              color = "red")
+
+corPTDG = cor(rating$PT, rating$DG)
+quality$PFDG = corPTDG^2
+quality
+
+
+
+```
+
+```{r echo=FALSE, eval=FALSE}
+modPTGFGS = lm(PT ~ GF + GS, data = rating)
+
+summary(modPTGFGS)$coefficients
+coe = abs(summary(modPTGFGS)$coefficients[2:3])
+names(coe) = c("attack", "defense")
+round(coe / sum(coe), 2)
+
+quality$PTGFGS = summary(modPTGFGS)$r.squared
+quality
+
+```
+
+

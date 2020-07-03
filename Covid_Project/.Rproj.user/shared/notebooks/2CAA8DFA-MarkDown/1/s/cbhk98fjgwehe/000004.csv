@@ -1,0 +1,7 @@
+"0",""
+"0",""
+"0","ggplot( t_continent, aes( x = popolazione, y = prev_perc, color= Continent_Name) ) + "
+"0","  geom_point( size = 5) + "
+"0","  theme_minimal() + "
+"0","  xlab(""popolazione"") + "
+"0","  ylab(""prevalenza %"")"

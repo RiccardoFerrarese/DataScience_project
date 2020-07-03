@@ -1,0 +1,138 @@
+---
+title: "Which is the best team ever in Italian soccer?"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+# cache results
+knitr::opts_chunk$set(cache=FALSE, echo = TRUE, eval = FALSE, message=FALSE, warning = FALSE, fig.align='center')
+```
+This challenge explores all matches of Italian soccer Serie A league from 1993 to 2019. 
+
+### Challenges
+1. Import data by scraping [football-data.co.uk](http://www.football-data.co.uk/italym.php). Select only columns Date, HomeTeam,i AwayTeam, FTHG, FTAG and filter rows with a valid (not NA) Date (use code below).
+1. using dplyr and tidyr packages (no for loops!), compute statistics for every team (matches, wins, loses, draws, points, pointsU per match). Hint: mutate a column with the outcome of the match (for instance, H = home teams wins, A = away team wins, P = draw). Then group by team and outcome (home and away) and hence spread the outcome.
+1. Answwer the following questions: 
+    - Which teams played more matches? 
+    - Which teams lead the points ranking?  
+    - Which teams lead the ranking by average number of points per match? 
+
+
+### Scrape data
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(stringr)
+
+```
+
+
+```{r eval=FALSE}
+
+# prepare link structure
+link1 = "http://www.football-data.co.uk/mmz4281/"
+link2 = "/I1.csv"
+# first solution
+years = sprintf("%02d", c(seq(93, 99), seq(0, 19)))
+# second solution
+years = c(as.character(seq(93, 99)), str_c("0", as.character(seq(0, 9))), as.character(seq(10, 19)))
+# link vector
+nseasons = length(years)-1
+links = str_c(link1, str_c(years[1:nseasons], years[2:(nseasons+1)]), link2)
+
+# scrape data
+# make a list of lists (each list element is a season)
+l = vector("list", nseasons)
+for (i in 1:nseasons) {
+  # read the season dataset
+  l[[i]] = read_csv(links[i])
+}
+# name the seasons with years
+names(l) = years[1:nseasons]
+
+# clean data (filter columns and rows)
+for (i in 1:nseasons) {
+  l[[i]] = l[[i]] %>% 
+    select(Date, HomeTeam, AwayTeam, FTHG, FTAG) %>%
+    filter(!is.na(Date), !is.na(FTHG), !is.na(FTAG)) %>% 
+    mutate(Date = dmy(Date)) 
+}
+
+# combine seasons in a unique data frame
+history = list()
+for (i in 1:nseasons) {
+  history = rbind(history, l[[i]])
+}
+
+# save data on disk
+write_csv(history, "history.csv")
+
+```
+
+
+
+```{r echo=FALSE, eval=FALSE}
+#### mutate, count, spread permetto di evitare i ciclio for 
+
+
+# home statistics
+dfH = history %>% 
+  mutate(outcome = ifelse(FTHG > FTAG, "H", ifelse(FTHG < FTAG, "A", "D"))) %>% 
+  count(HomeTeam, outcome) %>% 
+  spread(key = outcome, value = n) %>% 
+  rename(team = HomeTeam, winsHome = H, drawsHome = D, losesHome = A) %>% 
+  mutate(winsHome = ifelse(is.na(winsHome), 0, winsHome), 
+         drawsHome = ifelse(is.na(drawsHome), 0, drawsHome), 
+         losesHome = ifelse(is.na(losesHome), 0, losesHome)) %>% 
+  select(team, winsHome, drawsHome, losesHome) %>% 
+  mutate(pointsHome = 3*winsHome + drawsHome) %>% 
+  arrange(team)
+
+history
+dfH
+
+# away statistics
+dfA = history %>%
+  mutate(outcome = ifelse(FTHG > FTAG, "H", ifelse(FTHG < FTAG, "A", "D"))) %>% 
+  count(AwayTeam, outcome) %>% 
+  spread(key = outcome, value = n) %>% 
+  rename(team = AwayTeam, winsAway = A, drawsAway = D, losesAway = H) %>% 
+  mutate(winsAway = ifelse(is.na(winsAway), 0, winsAway), 
+         drawsAway = ifelse(is.na(drawsAway), 0, drawsAway), 
+         losesAway = ifelse(is.na(losesAway), 0, losesAway)) %>% 
+  mutate(pointsAway = 3*winsAway + drawsAway) %>% 
+  arrange(team)
+
+# overall statistics
+rating = inner_join(dfH, dfA) %>% 
+  mutate(wins = winsHome + winsAway, 
+         draws = drawsHome + drawsAway,
+         loses = losesHome + losesAway, 
+         points = pointsHome + pointsAway,
+         matches = wins + loses + draws,
+         pointsPerMatch = points / matches) %>% 
+  select(team, matches, points, pointsPerMatch, everything()) %>% 
+  arrange(-pointsPerMatch)
+
+rating
+
+```
+
+```{r }
+
+#Which teams played more matches? 
+
+```
+
+
+
+
+
+
+
+

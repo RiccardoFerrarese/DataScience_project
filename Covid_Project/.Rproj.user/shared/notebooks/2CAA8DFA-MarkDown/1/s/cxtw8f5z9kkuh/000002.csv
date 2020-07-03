@@ -1,0 +1,10 @@
+"0","data_ita_init <- read.csv(""GitRepoIta/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"" )"
+"0",""
+"0","data_ita_init$data = substring( data_ita_init$data, 1, 10)"
+"0",""
+"0","data_ita_tidy <- data_ita_init %>% "
+"0","  select( -stato, -casi_testati, -note_it, -note_en ) %>% "
+"0","  mutate( data = ymd(data))"
+"2","Errore: Can't subset columns that don't exist.
+[31mx[39m The column `note_it` doesn't exist.
+"

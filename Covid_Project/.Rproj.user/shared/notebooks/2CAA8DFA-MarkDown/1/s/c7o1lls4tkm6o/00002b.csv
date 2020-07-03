@@ -1,0 +1,4 @@
+"0",""
+"0","global_df_init <- read.csv(""GitRepoData/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"" )"
+"0",""
+"0","head(global_df_init )"

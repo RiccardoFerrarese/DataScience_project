@@ -1,0 +1,8 @@
+"0",""
+"0",""
+"0","p <- ggplot( global_df_date, aes( x = date, y = cases, group = country,)) + "
+"0","  geom_line( alpha = 0.3 ) + "
+"0","  scale_y_log10() + "
+"0","  theme_minimal()  "
+"0",""
+"0","ggplotly(p)"
